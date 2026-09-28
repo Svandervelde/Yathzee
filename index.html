@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#C62F2A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Yahtzee">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Yahtzee Scoreblok</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#EDF0F4; --paper:#FFFFFF; --sub:#F5F7FA; --ink:#1A1E27; --muted:#667085;
+  --line:#DCE1E8; --line-strong:#B6BECB; --accent:#C62F2A; --accent-ink:#FFFFFF;
+  --accent-soft:#FBE9E8; --good:#1E7A4C; --good-soft:#E2F2E9; --warn:#B4541A;
+  --shadow:0 10px 30px rgba(20,24,33,.18);
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F1217; --paper:#181C23; --sub:#1D222A; --ink:#E8EBF0; --muted:#98A1B0;
+    --line:#2A303A; --line-strong:#404857; --accent:#EF5A52; --accent-ink:#1A0D0C;
+    --accent-soft:#3A1F1F; --good:#52C58D; --good-soft:#173022; --warn:#E59A5E;
+    --shadow:0 10px 30px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1217; --paper:#181C23; --sub:#1D222A; --ink:#E8EBF0; --muted:#98A1B0;
+  --line:#2A303A; --line-strong:#404857; --accent:#EF5A52; --accent-ink:#1A0D0C;
+  --accent-soft:#3A1F1F; --good:#52C58D; --good-soft:#173022; --warn:#E59A5E;
+  --shadow:0 10px 30px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;min-height:100vh}
+img{max-width:100%}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--body);font-variant-numeric:tabular-nums}
+.page{max-width:960px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+h1{font:800 clamp(26px,6vw,36px)/1 var(--display);letter-spacing:-.02em;margin:0;display:flex;align-items:center;gap:10px}
+h1 svg{width:.95em;height:.95em;flex:none}
+.sub{color:var(--muted);margin:4px 0 0;font-size:14px}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{border:1px solid var(--line-strong);background:var(--paper);border-radius:10px;padding:8px 12px;font-weight:500;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:default;border-color:var(--line-strong)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.05)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.banner{background:var(--accent-soft);border-radius:10px;padding:10px 14px;font-size:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.banner button{background:none;border:0;padding:0;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+
+.turn{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:15px;width:100%}
+.turn b{font-family:var(--display);font-weight:800;font-size:18px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft);flex:none}
+
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.scroll{overflow-x:auto}
+table{border-collapse:separate;border-spacing:0;width:100%;min-width:max-content}
+th,td{border-bottom:1px solid var(--line);padding:0;text-align:center;height:44px}
+thead th{height:auto;border-bottom:2px solid var(--line-strong);background:var(--paper);position:sticky;top:0}
+.cat{position:sticky;left:0;z-index:1;background:var(--paper);text-align:left;padding:0 12px;min-width:128px;border-right:1px solid var(--line);font-weight:500}
+thead .cat{z-index:2;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.catinner{display:flex;align-items:center;gap:10px}
+.catinner small{display:block;color:var(--muted);font-size:12px;font-weight:400;line-height:1.2}
+.die{width:20px;height:20px;flex:none}
+.die rect{fill:var(--paper);stroke:var(--line-strong)}
+.die circle{fill:var(--ink)}
+.pname{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;min-width:76px;padding:10px 8px;border:0;background:none;font:700 15px/1.2 var(--display)}
+.pname span.n{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pname span.t{font:500 11px var(--body);color:var(--accent);letter-spacing:.06em;text-transform:uppercase;min-height:14px}
+.cell{width:100%;height:100%;min-width:76px;border:0;background:none;font-size:17px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.cell:hover{background:var(--sub)}
+.cell.empty{color:var(--line-strong);font-weight:400}
+.yzwrap{display:flex;align-items:stretch;height:100%}
+.yzwrap .cell{flex:1;min-width:0;flex-direction:column;gap:0;line-height:1.1}
+.yzb{font-size:11px;font-weight:600;color:var(--good)}
+.plus{flex:none;width:34px;border:0;border-left:1px solid var(--line);background:var(--good-soft);color:var(--good);font:800 20px var(--display);display:flex;align-items:center;justify-content:center}
+.plus:hover{background:var(--good);color:var(--paper)}
+.cell.zero{color:var(--muted);font-weight:700;font-size:20px}
+td.cur{background:color-mix(in srgb,var(--accent-soft) 55%,transparent)}
+thead th.cur{background:var(--accent-soft)}
+tr.section th{height:34px;background:var(--sub);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;text-align:left;padding:0 14px}
+tr.section th.cat{background:var(--sub)}
+tr.sum td,tr.sum th{background:var(--sub);font-weight:600}
+tr.sum td.cur{background:color-mix(in srgb,var(--accent-soft) 70%,var(--sub))}
+tr.sum td{font-size:16px}
+tr.grand th,tr.grand td{border-bottom:0;height:56px}
+tr.grand td{font:800 22px var(--display)}
+.par{display:block;font-size:11px;font-weight:500;line-height:1}
+.par.up{color:var(--good)} .par.down{color:var(--warn)}
+.sumcell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;height:100%}
+.bonus-yes{color:var(--good)}
+
+.standings{padding:16px;display:flex;flex-direction:column;gap:10px}
+.standings h2{font:800 18px var(--display);margin:0}
+.row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center}
+.rank{font:800 16px var(--display);color:var(--muted);text-align:center}
+.row.first .rank{color:var(--accent)}
+.bar{height:8px;border-radius:4px;background:var(--line);margin-top:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ink);border-radius:4px}
+.row.first .bar i{background:var(--accent)}
+.row .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .pts{font:800 20px var(--display);min-width:48px;text-align:right}
+.winner{background:var(--good-soft);color:var(--good);border-radius:10px;padding:10px 14px;font-weight:600}
+
+.rules{color:var(--muted);font-size:13px;margin:0;max-width:65ch}
+.hist{padding:16px;display:flex;flex-direction:column;gap:16px}
+.hist-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.hist h2{font:800 22px var(--display);margin:0}
+.hist h3{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.hist .note{color:var(--muted);font-size:14px;margin:0}
+.stats{border-collapse:separate;border-spacing:0;width:100%}
+.stats th,.stats td{height:auto;padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.stats th:first-child,.stats td:first-child{text-align:left;padding-left:0}
+.stats thead th{font-size:12px;color:var(--muted);font-weight:600;position:static;border-bottom:2px solid var(--line-strong)}
+.stats td:first-child{font-weight:600}
+.games{display:flex;flex-direction:column;gap:0;margin:0;padding:0;list-style:none}
+.game{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:12px 0;border-bottom:1px solid var(--line);align-items:start}
+.game:last-child{border-bottom:0}
+.game .when{font-size:13px;color:var(--muted)}
+.game .when em{font-style:normal;color:var(--warn);margin-left:6px}
+.game .res{display:flex;flex-wrap:wrap;gap:4px 14px;grid-column:1/-1}
+.game .res span{font-size:14px}
+.game .res b{font-weight:700}
+.game .res .win b{color:var(--accent)}
+.linkbtn{background:none;border:0;padding:2px 0;color:var(--muted);font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.linkbtn:hover{color:var(--accent)}
+.linkbtn.armed{color:var(--accent);font-weight:600}
+
+/* sheet */
+.overlay{position:fixed;inset:0;background:rgba(10,12,16,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--paper);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px;max-height:88vh;overflow:auto;animation:up .18s ease-out}
+@media (min-width:600px){.overlay{align-items:center}.sheet{border-radius:18px}}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.sheet h3{margin:0;font:800 20px var(--display);text-wrap:balance}
+.sheet p{margin:0;color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.opt{border:1px solid var(--line-strong);background:var(--paper);border-radius:12px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.opt b{font:800 22px var(--display)}
+.opt small{color:var(--muted);font-size:12px}
+.opt:hover{border-color:var(--ink)}
+.opt.sel{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.opt.sel small{color:inherit;opacity:.85}
+.opt.wide{grid-column:1/-1;flex-direction:row;justify-content:center;gap:10px}
+.opt.wide b{font-size:18px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between}
+.actions .right{display:flex;gap:8px;margin-left:auto}
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:500;font-size:14px}
+input[type=text]{font:inherit;font-size:17px;padding:10px 12px;border-radius:10px;border:1px solid var(--line-strong);background:var(--sub);color:var(--ink)}
+.counter{display:flex;align-items:center;justify-content:center;gap:18px}
+.counter b{font:800 34px var(--display);min-width:70px;text-align:center}
+.counter .btn{font-size:22px;width:52px;height:52px;justify-content:center}
+.danger{color:var(--accent);border-color:var(--accent)}
+.stack{display:flex;flex-direction:column;gap:8px}
+.stack .btn{justify-content:center;padding:12px}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="1.5" y="1.5" width="21" height="21" rx="5" fill="var(--accent)"/><circle cx="7.5" cy="7.5" r="2" fill="var(--paper)"/><circle cx="12" cy="12" r="2" fill="var(--paper)"/><circle cx="16.5" cy="16.5" r="2" fill="var(--paper)"/><circle cx="16.5" cy="7.5" r="2" fill="var(--paper)"/><circle cx="7.5" cy="16.5" r="2" fill="var(--paper)"/></svg>Yahtzee Scoreblok</h1>
+      <p class="sub">Tik op een vakje om de score in te vullen. Totalen en bonus rekenen vanzelf.</p>
+    </div>
+    <div class="tools">
+      <button class="btn" id="undo" type="button">↶ Ongedaan</button>
+      <button class="btn" id="add" type="button">+ Speler</button>
+      <button class="btn primary" id="new" type="button">Nieuw spel</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden>
+    <span>Dit is een voorbeeldspel met verzonnen scores.</span>
+    <button type="button" id="banner-new">Start een eigen spel</button>
+  </div>
+
+  <div class="turn" id="turn"></div>
+
+  <div class="card"><div class="scroll"><table id="tbl"></table></div></div>
+
+  <div class="card standings" id="standings"></div>
+
+  <p class="rules">Regels die de app toepast: bonus van 35 punten bij 63 of meer in het bovenste deel (gemiddeld drie stenen per getal). Full House 25, kleine straat 30, grote straat 40, Yahtzee 50. Heb je de Yahtzee met 50 punten ingevuld, dan verschijnt er een plusje. Tik daarop voor elke extra Yahtzee die je gooit: 100 punten erbij, en de beurt gaat naar de volgende speler. Wie aan het eind nog vakjes open heeft, speelt die beurten achter elkaar uit. Ongedaan draait een tik terug. Het lopende spel wordt op dit apparaat bewaard, zodat je verder kunt als je de pagina sluit. Een uitgespeeld spel komt automatisch in het overzicht hieronder. Het overzicht staat alleen op dit apparaat en in deze browser.</p>
+
+  <section class="card hist" id="hist" aria-labelledby="hist-title"></section>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+</div>
+
+<script>
+(function(){
+const UPPER=[
+  {k:'u1',n:'Enen',f:1},{k:'u2',n:'Tweeën',f:2},{k:'u3',n:'Drieën',f:3},
+  {k:'u4',n:'Vieren',f:4},{k:'u5',n:'Vijven',f:5},{k:'u6',n:'Zessen',f:6}];
+const LOWER=[
+  {k:'tok',n:'Drie gelijke',h:'Som van alle stenen',t:'sum'},
+  {k:'car',n:'Carré',h:'Som van alle stenen',t:'sum'},
+  {k:'fh',n:'Full House',h:'25 punten',t:'fix',v:25},
+  {k:'ks',n:'Kleine straat',h:'30 punten',t:'fix',v:30},
+  {k:'gs',n:'Grote straat',h:'40 punten',t:'fix',v:40},
+  {k:'yz',n:'Yahtzee',h:'50 · + per extra: 100',t:'fix',v:50},
+  {k:'kans',n:'Kans',h:'Som van alle stenen',t:'sum'}];
+const ALL=[...UPPER,...LOWER];
+const KEY='yahtzee-scoreblok-v1';
+let uid=1; const nid=()=>'p'+(Date.now().toString(36))+(uid++);
+
+function example(){
+  const mk=(name,s,yb)=>({id:nid(),name,s,yb:yb||0});
+  return {example:true,players:[
+    mk('Anna',{u1:3,u2:6,u3:9,u4:16,u5:15,tok:24,fh:25,ks:30,yz:50,kans:22}),
+    mk('Bram',{u1:2,u2:6,u3:12,u4:8,u5:15,u6:18,tok:19,car:0,fh:25,gs:40,kans:21}),
+    mk('Sanne',{u1:3,u2:4,u3:9,u4:12,u5:20,car:26,fh:25,ks:30,gs:0,kans:24})
+  ]};
+}
+function fresh(names){return {example:false,turn:0,gameId:'g'+Date.now().toString(36),players:names.map(n=>({id:nid(),name:n,s:{},yb:0}))};}
+
+let state, history=[];
+try{const raw=localStorage.getItem(KEY); if(raw){const d=JSON.parse(raw); if(d&&Array.isArray(d.players)&&d.players.length) state=d;}}catch(e){}
+if(!state) state=example();
+if(!state.example&&!state.gameId) state.gameId='g'+Date.now().toString(36);
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function commit(fn){history.push(JSON.stringify(state)); if(history.length>60) history.shift(); fn(); save(); render(); if(!state.example&&currentIdx()<0) recordGame(state,true);}
+
+const $=id=>document.getElementById(id);
+function el(tag,attrs,...kids){const e=document.createElement(tag); if(attrs) for(const [k,v] of Object.entries(attrs)){ if(k==='class') e.className=v; else if(k.startsWith('on')) e.addEventListener(k.slice(2),v); else if(v!==false&&v!=null) e.setAttribute(k,v===true?'':v);} for(const c of kids.flat()){ if(c==null||c===false) continue; e.append(c.nodeType?c:document.createTextNode(c)); } return e;}
+const NS='http://www.w3.org/2000/svg';
+const PIPS={1:[[12,12]],2:[[7,7],[17,17]],3:[[7,7],[12,12],[17,17]],4:[[7,7],[17,7],[7,17],[17,17]],5:[[7,7],[17,7],[12,12],[7,17],[17,17]],6:[[7,6],[17,6],[7,12],[17,12],[7,18],[17,18]]};
+function die(n){const s=document.createElementNS(NS,'svg'); s.setAttribute('viewBox','0 0 24 24'); s.setAttribute('class','die'); s.setAttribute('aria-hidden','true');
+  const r=document.createElementNS(NS,'rect'); Object.entries({x:1.5,y:1.5,width:21,height:21,rx:5,'stroke-width':1.5}).forEach(([k,v])=>r.setAttribute(k,v)); s.append(r);
+  PIPS[n].forEach(([x,y])=>{const c=document.createElementNS(NS,'circle'); c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r',2.1); s.append(c);}); return s;}
+
+function calc(p){
+  let up=0,par=0,filledUp=0;
+  UPPER.forEach(c=>{const v=p.s[c.k]; if(v!=null){up+=v; par+=v-3*c.f; filledUp++;}});
+  const bonus=up>=63?35:0;
+  let low=0; LOWER.forEach(c=>{const v=p.s[c.k]; if(v!=null) low+=v;});
+  low+=p.yb*100;
+  const filled=ALL.filter(c=>p.s[c.k]!=null).length;
+  return {up,par,filledUp,bonus,upTot:up+bonus,low,total:up+bonus+low,filled,upperDone:filledUp===6};
+}
+const done=p=>calc(p).filled>=ALL.length;
+const turnsOf=p=>typeof p.turns==='number'?p.turns:calc(p).filled+(p.yb||0);
+function nextIdx(i){const n=state.players.length; for(let s=1;s<=n;s++){const j=(i+s)%n; if(!done(state.players[j])) return j;} return -1;}
+function currentIdx(){
+  const n=state.players.length; if(!n) return -1;
+  let t=state.turn;
+  if(typeof t!=='number'||t<0||t>=n){ let best=-1,min=99; state.players.forEach((p,i)=>{const f=calc(p).filled; if(f<min){min=f;best=i;}}); return min>=ALL.length?-1:best; }
+  if(!done(state.players[t])) return t;
+  return nextIdx(t);
+}
+
+function render(){
+  $('banner').hidden=!state.example;
+  $('undo').disabled=!history.length;
+  $('add').disabled=state.players.length>=8;
+  const cur=currentIdx();
+  const calcs=state.players.map(calc);
+  const round=cur<0?0:turnsOf(state.players[cur])+1, open=cur<0?0:ALL.length-calcs[cur].filled;
+  $('turn').replaceChildren(cur<0
+    ? el('span',null,'Het spel is afgelopen.')
+    : el('span',{class:'turn'},el('span',{class:'dot'}),el('span',null,'Beurt ',String(round),' · nog ',String(open),open===1?' vakje':' vakjes',' open · aan de beurt: '),el('b',null,state.players[cur].name),state.players.length>1?el('button',{class:'btn',type:'button',style:'margin-left:auto;padding:5px 10px',onclick:()=>commit(()=>{state.turn=nextIdx(cur);})},'Volgende speler ›'):null));
+
+  const t=$('tbl'); t.replaceChildren();
+  const cls=i=>i===cur?'cur':null;
+  // head
+  t.append(el('thead',null,el('tr',null,el('th',{class:'cat',scope:'col'},'Categorie'),
+    state.players.map((p,i)=>el('th',{scope:'col',class:cls(i)},el('button',{class:'pname',type:'button',onclick:()=>openPlayer(i),'aria-label':'Speler '+p.name+' wijzigen'},el('span',{class:'n'},p.name),el('span',{class:'t'},i===cur?'aan de beurt':'')))))));
+  const tb=el('tbody');
+  const section=txt=>tb.append(el('tr',{class:'section'},el('th',{class:'cat',scope:'rowgroup'},txt),state.players.map(()=>el('th'))));
+  const catRow=(c,label)=>{
+    tb.append(el('tr',null,el('th',{class:'cat',scope:'row'},label),
+      state.players.map((p,i)=>{const v=p.s[c.k];
+        const cell=el('button',{type:'button',class:'cell'+(v==null?' empty':v===0?' zero':''),onclick:()=>openCell(i,c),'aria-label':p.name+', '+c.n+': '+(v==null?'leeg':v===0?'geschrapt':v)},v==null?'·':v===0?'—':String(v));
+        if(c.k==='yz'&&v===50){
+          const bonus=p.yb?el('span',{class:'yzb'},'+'+(p.yb*100)):null;
+          if(bonus) cell.append(bonus);
+          return el('td',{class:cls(i)},el('div',{class:'yzwrap'},cell,
+            el('button',{type:'button',class:'plus',title:'Nog een Yahtzee: +100','aria-label':p.name+': nog een Yahtzee gegooid, 100 punten erbij',onclick:()=>commit(()=>{const q=state.players[i]; q.turns=turnsOf(q)+1; q.yb=(q.yb||0)+1; state.turn=nextIdx(i);})},'+')));
+        }
+        return el('td',{class:cls(i)},cell);})));
+  };
+  const sumRow=(label,fn,extra)=>tb.append(el('tr',{class:'sum'+(extra?' '+extra:'')},el('th',{class:'cat',scope:'row'},label),state.players.map((p,i)=>el('td',{class:cls(i)},fn(calcs[i],p)))));
+
+  section('Bovenste deel');
+  UPPER.forEach(c=>catRow(c,el('span',{class:'catinner'},die(c.f),el('span',null,c.n))));
+  sumRow('Subtotaal',c=>{
+    const box=el('span',{class:'sumcell'},String(c.up));
+    if(c.filledUp) box.append(el('span',{class:'par '+(c.par>=0?'up':'down'),title:'Ten opzichte van 3 stenen per getal'},(c.par>0?'+':c.par<0?'−':'±')+Math.abs(c.par)));
+    return box;});
+  sumRow(el('span',{class:'catinner'},el('span',null,'Bonus',el('small',null,'bij 63 of meer'))),c=>{
+    if(c.bonus) return el('span',{class:'bonus-yes'},'35');
+    if(c.upperDone) return el('span',{class:'par down'},'0');
+    return el('span',{class:'par',style:'color:var(--muted)'},'nog '+(63-c.up));});
+  sumRow('Totaal boven',c=>String(c.upTot));
+  section('Onderste deel');
+  LOWER.forEach(c=>catRow(c,el('span',{class:'catinner'},el('span',null,c.n,el('small',null,c.h)))));
+  sumRow('Totaal onder',c=>String(c.low));
+  sumRow('Eindtotaal',c=>String(c.total),'grand');
+  t.append(tb);
+
+  // standings
+  const st=$('standings'); st.replaceChildren(el('h2',null,cur<0?'Eindstand':'Tussenstand'));
+  const order=state.players.map((p,i)=>({p,c:calcs[i]})).sort((a,b)=>b.c.total-a.c.total);
+  const max=Math.max(1,...order.map(o=>o.c.total));
+  if(cur<0){const top=order.filter(o=>o.c.total===order[0].c.total).map(o=>o.p.name);
+    st.append(el('div',{class:'winner'},(top.length>1?'Gelijkspel tussen '+top.join(' en '):top[0]+' wint')+' met '+order[0].c.total+' punten.'));}
+  let rank=0,prev=null;
+  order.forEach((o,idx)=>{ if(o.c.total!==prev){rank=idx+1; prev=o.c.total;}
+    st.append(el('div',{class:'row'+(rank===1&&o.c.total>0?' first':'')},el('span',{class:'rank'},String(rank)),
+      el('div',null,el('div',{class:'nm'},o.p.name),el('div',{class:'bar'},el('i',{style:'width:'+(o.c.total/max*100)+'%'}))),
+      el('span',{class:'pts'},String(o.c.total))));});
+}
+
+/* sheet */
+let lastFocus=null;
+function openSheet(nodes){lastFocus=document.activeElement; $('sheet').replaceChildren(...nodes); $('overlay').hidden=false; const f=$('sheet').querySelector('input,button.opt.sel,button.opt,button'); if(f) f.focus();}
+function closeSheet(){$('overlay').hidden=true; if(lastFocus&&document.contains(lastFocus)) lastFocus.focus();}
+$('overlay').addEventListener('click',e=>{if(e.target.id==='overlay') closeSheet();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('overlay').hidden) closeSheet();});
+const cancelBtn=()=>el('button',{class:'btn',type:'button',onclick:closeSheet},'Annuleren');
+
+function setScore(i,k,v){commit(()=>{ const p=state.players[i], wasEmpty=p.s[k]==null; if(v==null) delete p.s[k]; else p.s[k]=v; if(k==='yz'&&v!==50) p.yb=0; if(v!=null&&wasEmpty){ p.turns=turnsOf(p)+1; state.turn=nextIdx(i); } }); closeSheet();}
+
+function openCell(i,c){
+  const p=state.players[i], cur=p.s[c.k];
+  const opt=(v,small,wide)=>el('button',{type:'button',class:'opt'+(cur===v?' sel':'')+(wide?' wide':''),onclick:()=>setScore(i,c.k,v)},el('b',null,(v===0&&small==='schrappen')?'—':String(v)),el('small',null,small));
+  let hint, grid=el('div',{class:'grid'});
+  if(c.f){
+    hint='Hoeveel stenen met '+c.f+' '+(c.f===1?'oog':'ogen')+' heb je?';
+    for(let n=0;n<=5;n++) grid.append(opt(n*c.f,n===0?'geen':n+(n===1?' steen':' stenen')));
+  } else if(c.t==='fix'){
+    hint=c.k==='yz'?'Vijf gelijke stenen.':c.k==='fh'?'Drie gelijke plus twee gelijke.':c.k==='ks'?'Vier opeenvolgende stenen.':'Vijf opeenvolgende stenen.';
+    grid.append(opt(c.v,'gegooid',true), opt(0,'schrappen',true));
+  } else {
+    hint=c.k==='kans'?'Tel de ogen van alle vijf stenen op.':'Alleen geldig met '+(c.k==='car'?'vier':'drie')+' gelijke. Tel alle vijf stenen op.';
+    for(let v=5;v<=30;v++) grid.append(opt(v,''));
+    grid.append(opt(0,'schrappen',true));
+  }
+  openSheet([el('h3',null,p.name+' · '+c.n),el('p',null,hint),grid,
+    el('div',{class:'actions'},cur!=null?el('button',{class:'btn',type:'button',onclick:()=>setScore(i,c.k,null)},'Vakje leegmaken'):null,el('div',{class:'right'},cancelBtn()))]);
+}
+
+function openBonus(i){
+  const p=state.players[i]; let n=p.yb;
+  const val=el('b',null,String(n*100));
+  const upd=()=>{val.textContent=String(n*100);};
+  const ok=p.s.yz===50;
+  openSheet([el('h3',null,p.name+' · Yahtzee-bonus'),
+    el('p',null,ok?'Tel een extra Yahtzee op. Elke extra Yahtzee is 100 punten waard.':'De bonus telt alleen als het Yahtzee-vakje met 50 punten is ingevuld. Heb je de Yahtzee geschrapt, dan krijg je geen bonus.'),
+    el('div',{class:'counter'},el('button',{class:'btn',type:'button','aria-label':'Eén minder',onclick:()=>{if(n>0){n--;upd();}}},'−'),val,el('button',{class:'btn',type:'button','aria-label':'Eén meer',disabled:!ok,onclick:()=>{n++;upd();}},'+')),
+    el('div',{class:'actions'},el('div',{class:'right'},cancelBtn(),el('button',{class:'btn primary',type:'button',onclick:()=>{ if(n!==p.yb) commit(()=>{state.players[i].yb=n;}); closeSheet();}},'Opslaan')))]);
+}
+
+function openPlayer(i){
+  const isNew=i==null, p=isNew?null:state.players[i];
+  const inp=el('input',{type:'text',id:'name-input',maxlength:'24',value:isNew?'Speler '+(state.players.length+1):p.name,autocomplete:'off'});
+  const doSave=()=>{const name=inp.value.trim()||('Speler '+((isNew?state.players.length:i)+1));
+    commit(()=>{ if(isNew) state.players.push({id:nid(),name,s:{},yb:0}); else state.players[i].name=name; }); closeSheet();};
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doSave();}});
+  let armed=false;
+  const del=(!isNew&&state.players.length>1)?el('button',{class:'btn danger',type:'button',onclick:e=>{ if(!armed){armed=true; e.currentTarget.textContent='Tik nogmaals om te verwijderen'; return;} commit(()=>{state.players.splice(i,1); if(typeof state.turn==='number'){ if(state.turn>i) state.turn--; if(state.turn>=state.players.length) state.turn=0; }}); closeSheet();}},'Speler verwijderen'):null;
+  openSheet([el('h3',null,isNew?'Speler toevoegen':'Speler wijzigen'),el('label',{class:'f',for:'name-input'},'Naam',inp),
+    el('div',{class:'actions'},del,el('div',{class:'right'},cancelBtn(),el('button',{class:'btn primary',type:'button',onclick:doSave},isNew?'Toevoegen':'Opslaan')))]);
+  inp.focus(); inp.select();
+}
+
+function openNew(){
+  const names=state.example?['Speler 1','Speler 2']:state.players.map(p=>p.name);
+  openSheet([el('h3',null,'Nieuw spel'),el('p',null,state.example?'Het voorbeeldspel wordt gewist. Je begint met twee spelers die je een naam kunt geven.':'Alle scores worden gewist. Met Ongedaan kun je dit terugdraaien.'),
+    el('div',{class:'stack'},
+      (!state.example&&currentIdx()>=0&&state.players.some(p=>calc(p).filled>0))?el('button',{class:'btn',type:'button',onclick:()=>{recordGame(state,false); commit(()=>{state=fresh(names);}); closeSheet();}},'Tussenstand bewaren in overzicht en opnieuw'):null,
+      !state.example?el('button',{class:'btn primary',type:'button',onclick:()=>{commit(()=>{state=fresh(names);}); closeSheet();}},'Opnieuw met '+names.join(', ')):null,
+      el('button',{class:'btn'+(state.example?' primary':''),type:'button',onclick:()=>{commit(()=>{state=fresh(['Speler 1','Speler 2']);}); closeSheet(); openPlayer(0);}},'Nieuwe spelers'),
+      cancelBtn())]);
+}
+
+$('undo').addEventListener('click',()=>{ if(!history.length) return; state=JSON.parse(history.pop()); save(); render(); });
+$('add').addEventListener('click',()=>openPlayer(null));
+$('new').addEventListener('click',openNew);
+$('banner-new').addEventListener('click',openNew);
+
+/* ---------- overzicht van gespeelde spellen ---------- */
+const HKEY='yahtzee-historie-v1';
+let db=null, games=null, histMsg='', resetArmed=false, delArmed=null;
+const dbReady=(async()=>{
+  if(db){
+    db.collection('games').onSnapshot(snap=>{games=snap.docs.map(d=>Object.assign({id:d.id},d.data())); renderHist();},
+      ()=>{histMsg='Het overzicht kon niet worden geladen. Laad de pagina opnieuw.'; renderHist();});
+  } else {
+    try{games=JSON.parse(localStorage.getItem(HKEY)||'[]');}catch(e){games=[];}
+    renderHist();
+  }
+})();
+function localSave(){try{localStorage.setItem(HKEY,JSON.stringify(games));}catch(e){}}
+
+async function recordGame(st,complete){
+  if(!st.gameId) return;
+  const rec={finishedAt:Date.now(),complete:!!complete,players:st.players.map(p=>({name:p.name,total:calc(p).total}))};
+  await dbReady;
+  if(db){
+    const old=(games||[]).find(g=>g.id===st.gameId);
+    if(old&&JSON.stringify(old.players)===JSON.stringify(rec.players)&&old.complete===rec.complete) return;
+    try{await db.doc('games/'+st.gameId).set(rec);}
+    catch(e){histMsg=e&&e.code==='quota_exceeded'?'Het overzicht is vol. Verwijder oude spellen of wis het overzicht.':'Dit spel kon niet worden bewaard. Probeer het later opnieuw.'; renderHist();}
+  } else {
+    games=(games||[]).filter(g=>g.id!==st.gameId); games.push(Object.assign({id:st.gameId},rec)); localSave(); renderHist();
+  }
+}
+async function deleteGame(id){
+  if(db){ try{await db.doc('games/'+id).delete();}catch(e){histMsg='Verwijderen is niet gelukt. Probeer het opnieuw.'; renderHist();} }
+  else { games=games.filter(g=>g.id!==id); localSave(); renderHist(); }
+}
+async function resetAll(){
+  const ids=(games||[]).map(g=>g.id);
+  if(db){ for(const id of ids){ try{await db.doc('games/'+id).delete();}catch(e){histMsg='Niet alle spellen zijn gewist. Probeer het opnieuw.';} } renderHist(); }
+  else { games=[]; localSave(); renderHist(); }
+}
+
+function renderHist(){
+  const h=$('hist'); h.replaceChildren();
+  const list=(games||[]).slice().sort((a,b)=>(b.finishedAt||0)-(a.finishedAt||0));
+  const resetBtn=list.length?el('button',{class:'btn'+(resetArmed?' danger':''),type:'button',onclick:()=>{ if(!resetArmed){resetArmed=true; renderHist(); setTimeout(()=>{resetArmed=false; renderHist();},5000); return;} resetArmed=false; resetAll(); }},resetArmed?'Tik nogmaals om alles te wissen':'Overzicht resetten'):null;
+  h.append(el('div',{class:'hist-head'},el('h2',{id:'hist-title'},'Gespeelde spellen'),resetBtn));
+  if(histMsg) h.append(el('p',{class:'note',style:'color:var(--warn)'},histMsg));
+  if(games==null){h.append(el('p',{class:'note'},'Overzicht laden…')); return;}
+  if(!list.length){h.append(el('p',{class:'note'},'Nog geen spellen. Zodra een spel is uitgespeeld, verschijnt het hier met de eindscores.')); return;}
+
+  // statistieken per speler
+  const stats={};
+  list.forEach(g=>{
+    const top=Math.max(...g.players.map(p=>p.total));
+    g.players.forEach(p=>{const k=p.name.trim().toLowerCase(); const s=stats[k]||(stats[k]={name:p.name.trim(),n:0,w:0,best:0,sum:0});
+      s.n++; s.sum+=p.total; s.best=Math.max(s.best,p.total); if(g.complete&&p.total===top&&g.players.length>1) s.w++;});
+  });
+  const rows=Object.values(stats).sort((a,b)=>b.w-a.w||b.sum/b.n-a.sum/a.n);
+  h.append(el('h3',null,'Per speler'),
+    el('div',{class:'scroll'},el('table',{class:'stats'},
+      el('thead',null,el('tr',null,el('th',{scope:'col'},'Speler'),el('th',{scope:'col'},'Gespeeld'),el('th',{scope:'col'},'Gewonnen'),el('th',{scope:'col'},'Totaal'),el('th',{scope:'col'},'Gemiddeld'),el('th',{scope:'col'},'Hoogste'))),
+      el('tbody',null,rows.map(r=>el('tr',null,el('td',null,r.name),el('td',null,String(r.n)),el('td',null,String(r.w)),el('td',{style:'font-weight:700'},String(r.sum)),el('td',null,String(Math.round(r.sum/r.n))),el('td',null,String(r.best))))))));
+
+  const fmt=ts=>{try{return new Date(ts).toLocaleString('nl-NL',{weekday:'short',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return '';}};
+  h.append(el('h3',null,'Alle spellen ('+list.length+')'),
+    el('ul',{class:'games'},list.map(g=>{
+      const top=Math.max(...g.players.map(p=>p.total));
+      const armed=delArmed===g.id;
+      return el('li',{class:'game'},
+        el('span',{class:'when'},fmt(g.finishedAt),g.complete?null:el('em',null,'niet uitgespeeld')),
+        el('button',{class:'linkbtn'+(armed?' armed':''),type:'button',onclick:()=>{ if(!armed){delArmed=g.id; renderHist(); return;} delArmed=null; deleteGame(g.id);}},armed?'Zeker weten?':'Verwijderen'),
+        el('div',{class:'res'},g.players.slice().sort((a,b)=>b.total-a.total).map(p=>el('span',{class:p.total===top&&g.players.length>1?'win':null},p.name+' ',el('b',null,String(p.total))))));
+    })));
+}
+renderHist();
+render();
+})();
+</script>
+
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
+</script>
+</body>
+</html>
